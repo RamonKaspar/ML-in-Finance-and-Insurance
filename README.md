@@ -4,7 +4,7 @@ Coding assignments of the "Machine Learning in Finance & Insurance" course at ET
 
 ## Assignment 1: Pricing with linear regression
 
-This project implements linear regression with regularization techniques (Ridge, Lasso, and Truncated Pseudoinverse) on the Housing dataset to predict house prices based on various numerical and categorical features. The model performances are compared in terms of in-sample and out-of-sample metrics, with a focus on identifying the best model for generalization and feature selection.
+This project applies linear regression and regularization techniques (Ridge, Lasso, and Truncated Pseudoinverse) on the Housing dataset to predict house prices using both numerical and one-hot-encoded categorical features. We systematically compare model performances in terms of in-sample and out-of-sample metrics. Our analysis shows that _Lasso_ achieves the best generalization, while higher-order polynomial models suffer from significant overfitting.
 
 ## Assignment 2: Credit analytics
 
