@@ -17,9 +17,7 @@ In this project, we conducted credit analytics for consumer loans using simulate
     <em>FDR/TPR Curves for Different Models and Datasets – a flatter curve with smaller AUC is ideal, indicating minimized loss (low FDR) and maximized business volume (high TPR).</em>
 </p>
 
-<p align="center">
-    <img src="02_Credit-Analytics/plots/profit_loss_scenarios.png" width="500">
-</p>
+![Profit Loss Scenario](02_Credit-Analytics/plots/profit_loss_scenarios.png)
 <p align="center" style="color: gray; font-style: italic;">
     <em>Profit and Loss Distributions for Lending Strategies – Strategy 3 shows the highest profits and lowest risk, indicating it’s the most effective in balancing reward and stability.</em>
 </p>
