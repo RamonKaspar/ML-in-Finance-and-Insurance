@@ -10,20 +10,19 @@ This project applies linear regression and regularization techniques (Ridge, Las
 
 In this project, we conducted credit analytics for consumer loans using simulated data to estimate the risk profiles of loan applicants. Focusing on three key features – age, monthly income, and employment status – we generated synthetic datasets and applied logistic regression and Support Vector Machines (SVM) to predict the likelihood of borrowers repaying their loans. Our goal was to evaluate three different lending strategies based on these predictive models to maximize profitability while managing risk, which we tested through simulations of 50,000 market scenarios. The results showed that the SVM-based lending strategy achieved the highest expected profit in simulations.
 
-<div style="text-align: center;">
-    <figure style="text-align: center;">
-    <img align="center" src="02_Credit-Analytics/plots/FDR_TPR_curves.png" width="500">
-    <figcaption style="color: gray; font-style: italic;">
-        FDR/TPR Curves for Different Models and Datasets – a flatter curve with smaller AUC is ideal, indicating minimized loss (low FDR) and maximized business volume (high TPR).
-    </figcaption>
-    </figure>
-    <figure style="text-align: center;">
-    <img align="center" src="02_Credit-Analytics/plots/profit_loss_scenarios.png" width="500">
-    <figcaption style="color: gray; font-style: italic;">
-        Profit and Loss Distributions for Lending Strategies – Strategy 3 shows the highest profits and lowest risk, indicating it’s the most effective in balancing reward and stability.
-    </figcaption>
-    </figure>
-</div>
+<p align="center">
+    <img src="02_Credit-Analytics/plots/FDR_TPR_curves.png" width="500">
+</p>
+<p align="center" style="color: gray; font-style: italic;">
+    <em>FDR/TPR Curves for Different Models and Datasets – a flatter curve with smaller AUC is ideal, indicating minimized loss (low FDR) and maximized business volume (high TPR).</em>
+</p>
+
+<p align="center">
+    <img src="02_Credit-Analytics/plots/profit_loss_scenarios.png" width="500">
+</p>
+<p align="center" style="color: gray; font-style: italic;">
+    <em>Profit and Loss Distributions for Lending Strategies – Strategy 3 shows the highest profits and lowest risk, indicating it’s the most effective in balancing reward and stability.</em>
+</p>
 
 ## Assignment 3: Deep hedging
 
