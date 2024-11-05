@@ -71,6 +71,10 @@
 \usepackage{marvosym, wasysym}
 \allowdisplaybreaks
 
+% Algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
 % Tables
 \usepackage{tabularx, multirow}
 \usepackage{makecell}
@@ -629,6 +633,135 @@ $
 $
 
 $\Rightarrow$ Kernel methods achieve optimal convergence rates for estimating $ \bar{f} $, making them effective for high-dimensional nonparametric regression. However, neural networks can be seen as kernel methods where the feature map is learned from data and thus better than any a-priori fixed kernel.
+
+\clearpage
+
+\section{Neural Networks}
+
+\begin{subbox}{Definition Feedforward Neural Network (FNN)}
+    A \textbf{FNN} is a function $F_{\theta}: \mathbb{R}^{N_0} \rightarrow \mathbb{R}^{N_L}$ defined as:
+$$
+F_{\theta} = F^{(L)} \circ \rho \odot F^{(L-1)} \circ \cdots \circ \rho \odot F^{(1)}
+$$
+\vspace{-0.5cm}
+\begin{myitemize}
+    \item each $F^{(k)}: \mathbb{R}^{N_{k-1}} \rightarrow \mathbb{R}^{N_k}$ an affine function: $ F^{(k)}(x) = W^{(k)} \cdot x + b^{(k)} $, where $W^{(k)} \in \mathbb{R}^{N_k \times N_{k-1}}$ are weights and $b^{(k)} \in \mathbb{R}^{N_k}$ biases,
+    \item $N_k$ the number of neurons in the $k$-th layer and $(N_0, \dots, N_L) \in \mathbb{N}^{L+1}$ is the network's architecture,
+    \item $\theta = ((W^{(k)}, b^{(k)}), k = 1, \dots, L)$ are network parameters,
+    \item parameter space is $\mathbb{R}^{P(N_0,\dots,N_L)} \ni \theta$, with $P := P(N_0, \dots, N_L) = \sum_{k=1}^{L} N_k N_{k-1} + N_k$,
+    \item $\rho: \mathbb{R} \rightarrow \mathbb{R}$ is the non-linear activation function applied to vectors element-wise.
+\end{myitemize}
+\end{subbox}
+
+\begin{myitemize}
+    \item $k = 0$ is the \textit{input layer}, $k = L$ is the \textit{output layer}, $k \in \{1, \dots, L-1\}$ are the \textit{hidden layers}. $L + 1$ is the \textit{number of layers} and $L$ is the \textit{depth},
+    \item $\|N\|_{\infty} = \max_{0 \leq k \leq L} N_k$ is the \textit{width} of the network.
+\end{myitemize}
+
+\vspace{-0.3cm}
+\begin{algorithm}
+\footnotesize
+\caption{Forward propagation}
+\begin{algorithmic}[1]
+\Require Params $\theta = \left( \left(W^{(k)}, b^{(k)}\right), k = 1, \dots, L \right)$; datapoint $(x, y)$
+\Ensure Loss value $\ell(F_{\theta}(x), y)$
+\State $a^{(0)} := x$
+\For{$k = 1, \dots, L - 1$}
+    \State $\tilde{a}^{(k)} := W^{(k)} a^{(k-1)} + b^{(k)}$
+    \State $a^{(k)} := \rho(\tilde{a}^{(k)})$
+\EndFor
+\State $\hat{y} := W^{(L)} a^{(L-1)} + b^{(L)}$
+\State \Return $\ell(\hat{y}, y)$
+\end{algorithmic}
+\end{algorithm}
+\vspace{-0.5cm}
+
+\begin{subbox}{Mini-batch Stochastic Gradient Descent (SGD)}
+    \vspace{-0.3cm}
+    $$
+    \theta_0 \sim \mathbb{P}_{\text{initialization}}, \quad \theta_{t+1} = \theta_t - \eta_t \nabla_{\theta} \mathcal{L}(\theta, D_{t}) \big|_{\theta = \theta_t}
+    $$
+    where \( D_t \) is a mini-batch of size \( B \). For \( B = 1 \), this reduces to standard SGD.
+\end{subbox}
+
+\begin{myitemize}
+    \item Non-convex loss $\Rightarrow$ SGD result depends on initialization.
+    \item Identical initial weights (e.g., $\theta_0 = c$) lead to identical gradients $\Rightarrow$ Initialize weights differently.
+\end{myitemize}
+
+\textbf{\textit{Xavier Initialization}:} \ \ (often used in practice)
+$$
+W^{(k)}_{j,l} \sim \mathcal{N}\left(0, \frac{1}{N_k}\right), \quad b^{(k)} = 0,
+$$
+where $N_k$ is the width of the $k$-th layer.
+
+\begin{algorithm}
+\footnotesize
+\caption{Back-propagation $\quad \mathcal{O}(L)$ time \& memory}
+\begin{algorithmic}[1]
+\Require Params $\theta = \left( \left(W^{(k)}, b^{(k)}\right), k = 1, \dots, L \right)$; datapoint $(x, y)$
+\Ensure Gradient $\nabla_{\theta} \ell(F_{\theta}(x), y)$
+\State Compute $\ell(F_{\theta}(x), y)$ using forward propagation
+\State $\text{\texttt{grad}} \gets \nabla_{\hat{y}} \ell(\hat{y}, y)$
+\State $\nabla_{W^{(L)}} \ell(\hat{y}, y) = \text{\texttt{grad}} \cdot {a^{(L-1)}}^{T}$
+\State $\nabla_{b^{(L)}} \ell(\hat{y}, y) = \text{\texttt{grad}}$
+\For{$k = L - 1, \dots, 1$}
+    \State $\text{\texttt{grad}} \gets \nabla_{\tilde{a}^{(k)}} \ell(\hat{y}, y) = \text{\texttt{grad}}^{T} \cdot W^{(k+1)} \cdot \text{diag} \left( \rho'(\tilde{a}^{(k)}) \right)$
+    \State $\nabla_{W^{(k)}} \ell(\hat{y}, y) = \text{\texttt{grad}} \cdot {a^{(k-1)}}^{T}$
+    \State $\nabla_{b^{(k)}} \ell(\hat{y}, y) = \text{\texttt{grad}}$
+\EndFor
+\State \Return $\left( \left( \nabla_{W^{(k)}} \ell(\hat{y}, y), \nabla_{b^{(k)}} \ell(\hat{y}, y) \right) \text{ for } k = 1, \dots, L \right)$
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+
+\subtitle{Batch Normalization} \\
+\textbf{Problem:} Parameter updates cause \textit{internal covariate shift}, slowing training. \\
+\textbf{Solution:} Normalize activations in each layer using batch mean and variance:
+$$
+a_j^{(k)}(x_i) \leftarrow \frac{a_j^{(k)}(x_i) - \mu_j^{(k)}}{\sqrt{\sigma_j^{(k)2} + \epsilon}},
+$$
+where
+$$
+\mu_j^{(k)} = \frac{1}{n_{\text{batch}}} \sum_{i=1}^{n_{\text{batch}}} a_j^{(k)}(x_i), \quad \sigma_j^{(k)2} = \frac{1}{n_{\text{batch}}} \sum_{i=1}^{n_{\text{batch}}} \left(a_j^{(k)}(x_i) - \mu_j^{(k)}\right)^2.
+$$
+$\epsilon \approx 10^{-5}$ prevents division by zero, Gradients are backpropagated through normalization.
+
+\subtitle{Regularization:} \\
+Loss functions are typically regularized, i.e. minimize objective: 
+
+$$
+\tilde{\mathcal{L}}(\theta, D) = \mathcal{L}(\theta, D) + \lambda \mathcal{R}(\theta),
+$$
+
+\textbf{Ridge:} $\mathcal{R}(\theta) = \|\theta\|_2^2$ (shrinks $\theta$, prevents overfitting) \\
+\textbf{Lasso:} $\mathcal{R}(\theta) = \|\theta\|_1$ (leads to sparse $\theta$) \\
+\textbf{Notes:} Only weights $W$ are regularized (not biases), and different $\lambda$ can be used per layer.
+
+\textbf{Training Techniques as Regularizers:}
+
+\begin{myitemize}
+    \item \textbf{Early Stopping:} Stop training if no improvement on validation set for $p$ steps (patience). Limits parameter space (similar to $L^2$-regularization).
+    \item \textbf{Dropout:} Set each neuron to zero with probability $p$ before each gradient step; encourages sparse, redundant represent..
+    \item \textbf{Other Techniques:} Bagging, dataset augmentation, weight robustness, parameter sharing.
+\end{myitemize}
+
+\newpage
+
+\subtitle{Complexity Bounds} \\
+How many hidden neurons $N$ do I need to approximate $f$ with a given accuracy $\epsilon$?
+
+\begin{subbox}{Complexity bounds for shallow networks}
+    Let $f \in C^2([0,1])$ and define $\text{ReLU}(x) = \max\{0, x\}$. For any $N \in \mathbb{N}$, there exists $f_N \in \mathcal{H}^{\text{ReLU}}_{(1,N+1,1)}$ such that
+    $$
+    \|f - f_N\|_{\infty, [0,1]} \leq \frac{1}{8N^2} \|f^{(2)}\|_{\infty, [0,1]}.
+    $$
+\end{subbox}
+
+
+
+
 
 \end{small}
 \end{document}
