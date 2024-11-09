@@ -18,10 +18,21 @@ In this project, we conducted credit analytics for consumer loans using simulate
 </p>
 
 ![Profit Loss Scenario](02_Credit-Analytics/plots/profit_loss_scenarios.png)
+
 <p align="center" style="color: gray; font-style: italic;">
     <em>Profit and Loss Distributions for Lending Strategies – Strategy 3 shows the highest profits and lowest risk, indicating it’s the most effective in balancing reward and stability.</em>
 </p>
 
 ## Assignment 3: Deep hedging
+
+This project implements and compares different approaches to hedge a European call option using deep learning. We developed three strategies: a neural network ensemble (one network per time step), a single network incorporating time as a feature, and the analytical Black-Scholes Delta hedging. Using 100,000 simulated price paths with daily rebalancing over one month, we trained the networks to minimize the variance of hedging errors.
+
+Our deep learning models achieved comparable performance to the analytical solution ($\sigma \approx 0.009$), despite not having access to the true market dynamics. The single network architecture proved particularly efficient, achieving slightly better standard deviation (0.00898 vs 0.00915) with only 40% of the parameters (1,185 vs 2,910) and reduced training time (8.7 vs 15.7 minutes). The hedging strategies become increasingly similar to the analytical solution as we approach option maturity, demonstrating the models' ability to learn the underlying financial principles.
+
+![](03_Deep-Hedging/plots/comparison_strategies_deep_vs_analytical.png)
+
+<p align="center" style="color: gray; font-style: italic;">
+    <em>Comparison of Hedging Strategies – The neural network learns to closely replicate the analytical Black-Scholes Delta hedging strategy, particularly as the option approaches maturity.</em>
+</p>
 
 ## Assignment 4: Insurance claim prediction
