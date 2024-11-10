@@ -722,10 +722,11 @@ where $N_k$ is the width of the $k$-th layer.
 $$
 a_j^{(k)}(x_i) \leftarrow \frac{a_j^{(k)}(x_i) - \mu_j^{(k)}}{\sqrt{\sigma_j^{(k)2} + \epsilon}},
 $$
-where
+\begin{footnotesize}
 $$
-\mu_j^{(k)} = \frac{1}{n_{\text{batch}}} \sum_{i=1}^{n_{\text{batch}}} a_j^{(k)}(x_i), \quad \sigma_j^{(k)2} = \frac{1}{n_{\text{batch}}} \sum_{i=1}^{n_{\text{batch}}} \left(a_j^{(k)}(x_i) - \mu_j^{(k)}\right)^2.
+\mu_j^{(k)} = \frac{1}{n_{\text{batch}}} \sum_{i=1}^{n_{\text{batch}}} a_j^{(k)}(x_i), \quad \sigma_j^{(k)2} = \frac{1}{n_{\text{batch}}} \sum_{i=1}^{n_{\text{batch}}} \left(a_j^{(k)}(x_i) - \mu_j^{(k)}\right)^2
 $$
+\end{footnotesize}
 $\epsilon \approx 10^{-5}$ prevents division by zero, Gradients are backpropagated through normalization.
 
 \subtitle{Regularization:} \\
@@ -749,17 +750,176 @@ $$
 
 \newpage
 
-\subtitle{Complexity Bounds} \\
-How many hidden neurons $N$ do I need to approximate $f$ with a given accuracy $\epsilon$?
+\section{Convolutional Neural Networks}
 
-\begin{subbox}{Complexity bounds for shallow networks}
-    Let $f \in C^2([0,1])$ and define $\text{ReLU}(x) = \max\{0, x\}$. For any $N \in \mathbb{N}$, there exists $f_N \in \mathcal{H}^{\text{ReLU}}_{(1,N+1,1)}$ such that
-    $$
-    \|f - f_N\|_{\infty, [0,1]} \leq \frac{1}{8N^2} \|f^{(2)}\|_{\infty, [0,1]}.
-    $$
+Three components: \textit{convolution-}, \textit{detector-} and \textit{pooling layer}.
+
+\textbf{Convolutional layer:} Let $I \in \mathbb{R}^{n_1 \times n_2}$, $K \in \mathbb{R}^{m_1 \times m_2}$, $m_1 \leq n_1$, $m_2 \leq n_2$, then their \textbf{cross-correlation} ($I \circledast K$) is:
+$$
+(I \circledast K)_{i,j} := \sum_{m=1}^{m_1} \sum_{n=1}^{m_2} I_{m+i-1, n+j-1} K_{m, n}.
+$$
+
+\begin{myitemize}
+    \item \textbf{Kernels:} Square $m \times m$ matrices ($m$ hyperparameter); convolution layer uses $M > 1$ kernels in parallel to produce multiple feature maps.
+    \item \textbf{Padding ($p$):} 0's added around input to control output size.
+    \item \textbf{Stride ($s$):} steps kernel moves over input matrix.
+\end{myitemize}
+
+Output size formula:$\left( \frac{n_1 + 2p - m}{s} + 1, \frac{n_2 + 2p - m}{s} + 1, M \right)$ \\
+
+\textbf{Detector layer:}
+Applies non-linear activation $\rho$ component-wise ($I_{i,j,k} \mapsto \rho(I_{i,j,k})$); output shape same as input; no trainable parameters.
+
+\begin{wrapfigure}{r}{0.25\columnwidth}
+    \centering
+    \vspace{-25pt}
+    \includegraphics[width=0.27\columnwidth]{figures/Visual-representation-of-pooling-operations-a-max-pooling-b-average-pooling}
+    \vspace{-20pt}
+\end{wrapfigure}
+
+\textbf{Pooling Layer:} Fixed filter (e.g., $m=2$, $s=2$, $p=0$); operates per channel; no trainable parameters.
+\\
+
+Convolution $\equiv$ Linear transformation via sparse, parameter-shared weights (doubly block-circulant matrix).
+
+\begin{myitemize}
+    \item \textbf{Parameter sharing:} Same kernel used at every position $\Rightarrow$ shared learning, translation equivariance.
+    \item \textbf{Sparsity:} Small kernels reduce parameters $\Rightarrow$ computational efficiency; layers extract local (edges) to global (digits) features.
+\end{myitemize}
+
+\section{Recurrent Neural Networks}
+
+\begin{wrapfigure}{r}{0.5\columnwidth}
+    \centering
+    \vspace{-25pt}
+    \includegraphics[width=0.5\columnwidth]{figures/RNN_cell.png}
+    \vspace{-20pt}
+\end{wrapfigure}
+
+Exploit data priors of sequential data, $(x^{\langle 1 \rangle}, x^{\langle 2 \rangle}, \dots, x^{\langle T \rangle})$.
+
+$$
+\begin{cases}
+a^{\langle t \rangle} = W \cdot h^{\langle t-1 \rangle} + U \cdot x^{\langle t \rangle} + b \\
+h^{\langle t \rangle} = \rho(a^{\langle t \rangle}) \\
+y^{\langle t \rangle} = V \cdot h^{\langle t \rangle} + c
+\end{cases}
+$$
+
+Hidden states of RNN form a dynamical system with stationary
+transition functions: $h^{\langle t \rangle} = f_{\theta}\left(h^{\langle t-1 \rangle}, x^{\langle t \rangle}\right)$. The parameter $\theta = (W, U, b)$ are used at each time step $t$ (\textbf{parameter sharing}). Hidden state $h^{\langle t \rangle}$ summarizes statistics of past sequence. \\
+
+\textbf{Back-Propagation Through Time (BPTT):} Consider Loss $\mathcal{L} = \sum_{t=1}^{T} \mathcal{L}^{\langle t \rangle} = \sum_{t=1}^{T} \ell(\hat{y}^{\langle t \rangle}, y^{\langle t \rangle}), \quad t = 1, \dots, T$
+
+Compute recursively the gradients of $\mathcal{L}$:
+$
+D_{\hat{y}^{\langle t \rangle}} \mathcal{L} = D_{\hat{y}^{\langle t \rangle}} \ell(\hat{y}^{\langle t \rangle}, y^{\langle t \rangle})
+$ and
+$
+D_{h^{\langle t \rangle}} \mathcal{L} = D_{\hat{y}^{\langle t \rangle}} \mathcal{L} \cdot V + D_{h^{\langle t+1 \rangle}} \mathcal{L} \cdot \operatorname{diag}\left( \rho'\left(a^{\langle t+1 \rangle}\right) \right) \cdot W
+$
+
+\textbf{Vanishing/Exploding Gradient Problem:} Gradients increase/decrease exponentially over time steps:
+$$
+D_{\theta} \mathcal{L}^{\langle t \rangle} = \sum_{k=1}^{t} \left( \prod_{i=k+1}^{t} D_{h^{\langle i \rangle}} h^{\langle i+1 \rangle} \right) D_{h^{\langle k \rangle}} \mathcal{L}^{\langle t \rangle} \cdot D_{\theta} h^{\langle k \rangle}
+$$
+If $ \| D_{h^{\langle i \rangle}} h^{\langle i+1 \rangle} \| > 1 $, gradients \textit{explode}; if $ < 1 $, gradients \textit{vanish}.
+
+\textbf{Solution to exploding gradient problem:} \textit{gradient clipping}; at each gradient step, if the gradient is larger than a threshold $K$, 'clip' it to $K$:
+
+$$
+D_\theta \mathcal{L} \leftarrow 
+\begin{cases} 
+D_\theta \mathcal{L} & \text{if } \|D_\theta \mathcal{L}\| < K \\ 
+K \frac{D_\theta \mathcal{L}}{\|D_\theta \mathcal{L}\|} & \text{if } \|D_\theta \mathcal{L}\| \geq K 
+\end{cases}
+$$
+
+\textbf{Solutions to vanishing gradient:}
+
+\textbf{(1) GRU:} Two gates control information flow (by learning optimal gate parameters, model learns how to accumulate/forget past info dynamically):
+$$\begin{cases}
+\Gamma_r = \rho(W_r h^{\langle t-1 \rangle} + U_r x^{\langle t \rangle} + b_r)  \quad \quad \text{(reset)} \\
+\Gamma_u = \rho(W_u h^{\langle t-1 \rangle} + U_u x^{\langle t \rangle} + b_u) \quad \quad \text{(update)} \\
+h^{\langle t \rangle} = (1-\Gamma_u) \odot h^{\langle t-1 \rangle} + \Gamma_u \odot \tanh(W[\Gamma_r \odot h^{\langle t-1 \rangle}, x^{\langle t \rangle}])
+\end{cases}$$
+
+\textbf{(2) LSTM:} Memory cell $c^{\langle t \rangle}$ separates information flow:
+$$\begin{cases}
+\Gamma_f, \Gamma_i, \Gamma_o = \text{forget/input/output gates} \\
+c^{\langle t \rangle} = \Gamma_f \odot c^{\langle t-1 \rangle} + \Gamma_i \odot \tilde{c}^{\langle t \rangle} & \text{(memory)} \\
+h^{\langle t \rangle} = \Gamma_o \odot \tanh(c^{\langle t \rangle}) & \text{(output)}
+\end{cases}$$
+
+
+
+\section{Neural Tangent Kernel (NTK)}
+
+Goal: Study the dynamics of a NN $F_\theta : \R^{N_0} \to \R$ during GD.
+
+\begin{subbox}{Definition of NTK}
+For a neural network $ F_{\theta} : \mathbb{R}^{N_0} \rightarrow \mathbb{R} $, the \textbf{Neural Tangent Kernel (NTK)} $ K(x, x'; \theta) $ is:
+$$
+K(x, x'; \theta) = D_{\theta} F_{\theta}(x) \cdot D_{\theta} F_{\theta}(x')^T
+$$
+$\Rightarrow$ \textit{Measures similarity} of gradients of $ F_{\theta} $ at points $ x, x' $, determining how changes in parameters affect function output similarity.
 \end{subbox}
 
+\begin{subbox}{Convergence at Initialization}
+In the \textbf{infinite-width limit} (width of hidden layers $ \rightarrow \infty $):
+1. $ K(\cdot, \cdot; \theta) $ becomes deterministic and \textit{remains constant during training}.
+2. $ F_{\theta}(x) $ approximates a \textit{Gaussian Process} (GP) with covariance kernel depending on initialization and activation function (Jacot et al., 2018).
+\end{subbox}
 
+\textbf{Consequence}: If $ K(\cdot, \cdot; \theta) $ is constant, gradient flow dynamics imply convergence of the loss to a global minimum.
+
+---
+
+\section{Generalization in Overparameterized Networks}
+
+\textbf{The Generalization Puzzle}: Overparameterized networks (high parameter count relative to data) generalize well despite fitting data perfectly (even on noisy or random labels), defying traditional bias-variance logic:
+1. Large NNs achieve near-zero \textit{training error} yet retain strong generalization.
+2. Increased model size often reduces \textit{test error}, contrary to overfitting expectations.
+
+\begin{subbox}{Explanations}
+    1. \textbf{Implicit regularization}: SGD favors "simple" solutions with low effective complexity.
+    2. \textbf{Minimum-norm interpolation}: Solution minimizes norm in RKHS induced by NTK, improving generalization (Neyshabur et al., 2017).
+    3. \textbf{Lazy training}: In very wide NNs, parameter updates are small, and training behaves linearly.
+\end{subbox}
+
+---
+
+\section{Gaussian Processes (GPs) and Neural Networks}
+
+\begin{subbox}{Gaussian Process (GP) Definition}
+A family of random variables $\{f(x)\}_{x \in X}$ is a \textbf{Gaussian Process} if any finite subset $(f(x_1), \dots, f(x_m))$ is multivariate Gaussian, characterized by:
+1. \textbf{Mean function} $ \mu(x) = \mathbb{E}[f(x)] $
+2. \textbf{Covariance kernel} $ C(x, x') = \text{Cov}(f(x), f(x')) $
+\end{subbox}
+
+\begin{subbox}{GP Interpretation of NNs}
+As width $ \rightarrow \infty $, shallow NNs approximate GPs with:
+$$
+\text{Cov}(F_{\theta}(x), F_{\theta}(x')) = C(x, x') = \mathbb{E}\left[ \rho(f(x)) \rho(f(x')) \right] + \beta^2
+$$
+where $ \rho $ is the activation function.
+\end{subbox}
+
+---
+
+\section{Double Descent Phenomenon}
+
+\textbf{Double Descent}: Test error decreases even after reaching zero training error, often seen in large models. Characterized by:
+- \textbf{Classical regime}: $ m/p \ll 1 $: Overfitting increases test error.
+- \textbf{Overparameterized regime}: $ m/p \approx 1 $: Decreased test error despite complex model.
+
+\begin{subbox}{Marchenko-Pastur Law (Random Matrix Theory)}
+For large $ m, p $ with $ p/m \rightarrow \gamma $, the \textbf{spectral distribution} of a random matrix follows the Marchenko-Pastur law:
+$$
+\mu_{\text{MP}}(ds) = \frac{\sqrt{(\gamma_+ - s)(s - \gamma_-)}}{2\pi \sigma^2 \gamma s} 1_{[\gamma_-, \gamma_+]}(s) ds
+$$
+where $ \gamma\_{\pm} = \sigma^2(1 \pm \sqrt{\gamma})^2 $.
+\end{subbox}
 
 
 
