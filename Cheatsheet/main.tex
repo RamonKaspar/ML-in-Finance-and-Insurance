@@ -748,6 +748,73 @@ $$
     \item \textbf{Other Techniques:} Bagging, dataset augmentation, weight robustness, parameter sharing.
 \end{myitemize}
 
+\subtitle{Neural Tangent Kernel (NTK)}
+
+\textbf{Generalization Puzzle:} Overparametrized NNs generalize well despite classical bias-variance trade-off.
+
+\textbf{Goal:} Study the dynamics of a NN $F_\theta : \R^{N_0} \to \R$ during GD.
+
+\begin{subbox_noTitle}
+For a NN \( F_{\theta} : \mathbb{R}^{N_0} \rightarrow \mathbb{R} \), the \textbf{NTK} is defined as:
+\[
+K(x, x'; \theta_t) = D_{\theta_t} F_{\theta}(x) \cdot D_{\theta} F_{\theta_t}(x')^\top \in \mathbb{R}.
+\]
+\end{subbox_noTitle}
+
+Loss: $\mathcal{L}(\theta_t, D) = \frac{1}{m} \sum_{i=1}^m \ell(F_{\theta_t}(x_i), y_i)$.
+
+Gradient flow: $\frac{d\theta_t}{dt} = - D_\theta \mathcal{L}(\theta_t, D)^\top$.
+
+Using chain rule:
+$\frac{d}{dt} \mathcal{L}(\theta_t, D) = - \frac{1}{m^2} \sum_{i,j=1}^m D_{\hat{y}} \ell(F_{\theta_t}(x_i), y_i) \cdot K(x_i, x_j; \theta_t) \cdot D_{\hat{y}} \ell(F_{\theta_t}(x_j), y_j)^\top 
+= - \left\| D_{\hat{y}} \ell(F_{\theta_t}(\cdot), y) \right\|_{K(\cdot, \cdot, \theta_t), D}^2$
+
+
+\subtitle{Convergence Results} [Jacot et. al, 2018]
+
+\textbf{Theorem (NTK at Initialization):} For shallow NN $(N_0,N_1,1)$ with $\theta_0 \sim \mathcal{N}(0,I)$, as $N_1 \to \infty$:
+$F_{\theta_0} \to \text{GP}(0,C)$ where
+$C(x,x') = \mathbb{E}_{f \sim \text{GP}(0,\Sigma)}[\rho(f(x))\rho(f(x'))] + \beta^2$
+with $\Sigma(x,x') = \frac{x^\top x'}{N_0} + \beta^2$
+
+\textbf{Theorem (NTK During Training):} For any $T>0$ with bounded $\int_0^T \frac{1}{m}\sum_i \|D_{\hat{y}}\ell(F_{\theta_t}(x_i),y_i)\|_2^2dt$:
+$\sup_{t\in[0,T]}\|K(x,x';\theta_t) - \tilde{K}(x,x')\| \xrightarrow{P} 0$ as width $\to \infty$.   
+
+\subtitle{Minimum-Norm Solution}
+
+For squared loss $\ell(\hat{y},y) = (\hat{y}-y)^2$, as $t \to \infty$:
+$F_{\theta_\infty}(x) = F_{\theta_0}(x) + \sum_{i=1}^m \sum_{j=1}^m \tilde{K}^{(L)}(x,x_i)\bar{K}_{i,j}^{-1}(y_j - F_{\theta_0}(x_j))$
+where $\bar{K}_{i,j} := \tilde{K}^{(L)}(x_i,x_j)$ (limiting NTK evaluated on dataset), First term is initial network output
+and Second term is correction towards minimum-norm interpolator in RKHS.
+
+\textbf{Key insight:} Solution converges to minimum-norm interpolator in NTK RKHS:
+$\arg\min_{f \in \mathcal{H}, f(x_i)=y_i} \|f\|_{\mathcal{H}}$.
+
+\subtitle{Generalization in Overparametrized Regime}
+
+\textbf{Linear Regression Setting:}
+Model: $Y = X^\top\beta + \epsilon$, $\epsilon \sim \mathcal{N}(0,\sigma^2)$, where $X=(X_1,...,X_p) \in \R^p$ with covariance $\Sigma$. $\rightarrow \hat{\beta} = (A^\top A)^\dagger A^\top Y$.
+
+\textbf{Bias-Variance Decomposition} (conditioned on $A$): \vspace{-10pt}
+$$\mathbb{E}[(\hat{f}_D(X) - f^*(X))^2|A] = \underbrace{\beta^\top\Pi\Sigma\Pi\beta}_{B_A=\text{bias}^2} + \underbrace{\frac{\sigma^2}{m}\text{Tr}(\hat{\Sigma}^\dagger\Sigma)}_{V_A=\text{variance}}$$
+where $\hat{\Sigma} = \frac{1}{m}A^\top A$, $\Pi = I_p - \hat{\Sigma}^\dagger\hat{\Sigma}$
+
+\textbf{Theorem (Asymptotic Variance):}
+For $p,m\to\infty$ with $p/m\to\gamma$:
+$V_A \to \sigma^2\frac{1-\max{1-\gamma,0}}{|1-\gamma|}$. \textit{[Hastie et al., 2022]}
+
+\textbf{Double Descent Phenomenon:} $\gamma$ quantifies model complexity ($\gamma \gg 1 \Rightarrow p \gg m \Rightarrow $ Complex model). Variance increase for $\gamma \in (0,1)$ (classical bias-variance trade-off), but decreases for $\gamma > 1$ (overparametrized).
+
+
+\begin{wrapfigure}{r}{0.5\columnwidth}
+    \centering
+    \vspace{-20pt}
+    \includegraphics[width=0.45\columnwidth]{figures/double_descent_curve.jpg}
+    \vspace{-30pt}
+\end{wrapfigure}
+
+$\Rightarrow$ Variance decreases as soon as model complexity passes the interpolation threshold. The test error can decrease even after the train error has reached zero.
+
 \newpage
 
 \section{Convolutional Neural Networks}
@@ -851,70 +918,6 @@ c^{\langle t \rangle} = \Gamma_f \odot c^{\langle t-1 \rangle} + \Gamma_i \odot 
 h^{\langle t \rangle} = \Gamma_o \odot \tanh(c^{\langle t \rangle}) & \text{(output)}
 \end{cases}$$
 
-\section{Neural Tangent Kernel (NTK)}
-
-\textbf{Generalization Puzzle:} Overparametrized NNs generalize well despite classical bias-variance trade-off.
-
-\textbf{Goal:} Study the dynamics of a NN $F_\theta : \R^{N_0} \to \R$ during GD.
-
-\begin{subbox}{Definition of Neural Tangent Kernel (NTK)}
-For a NN \( F_{\theta} : \mathbb{R}^{N_0} \rightarrow \mathbb{R} \), the \textbf{NTK} is defined as:
-\[
-K(x, x'; \theta_t) = D_{\theta_t} F_{\theta}(x) \cdot D_{\theta} F_{\theta_t}(x')^\top \in \mathbb{R}.
-\]
-\end{subbox}
-
-\begin{myitemize}
-    \item Loss: $\mathcal{L}(\theta_t, D) = \frac{1}{m} \sum_{i=1}^m \ell(F_{\theta_t}(x_i), y_i)$
-    \item Gradient flow: $\frac{d\theta_t}{dt} = - D_\theta \mathcal{L}(\theta_t, D)^\top$
-\end{myitemize}
-
-Using chain rule:
-$\frac{d}{dt} \mathcal{L}(\theta_t, D) = - \frac{1}{m^2} \sum_{i,j=1}^m D_{\hat{y}} \ell(F_{\theta_t}(x_i), y_i) \cdot K(x_i, x_j; \theta_t) \cdot D_{\hat{y}} \ell(F_{\theta_t}(x_j), y_j)^\top 
-= - \left\| D_{\hat{y}} \ell(F_{\theta_t}(\cdot), y) \right\|_{K(\cdot, \cdot, \theta_t), D}^2$
-
-
-\subtitle{Convergence Results} [Jacot et. al, 2018]
-
-\textbf{Theorem (NTK at Initialization):} For shallow NN $(N_0,N_1,1)$ with $\theta_0 \sim \mathcal{N}(0,I)$, as $N_1 \to \infty$:
-$F_{\theta_0} \to \text{GP}(0,C)$ where
-$C(x,x') = \mathbb{E}_{f \sim \text{GP}(0,\Sigma)}[\rho(f(x))\rho(f(x'))] + \beta^2$
-with $\Sigma(x,x') = \frac{x^\top x'}{N_0} + \beta^2$
-
-\textbf{Theorem (NTK During Training):} For any $T>0$ with bounded $\int_0^T \frac{1}{m}\sum_i \|D_{\hat{y}}\ell(F_{\theta_t}(x_i),y_i)\|_2^2dt$:
-$\sup_{t\in[0,T]}\|K(x,x';\theta_t) - \tilde{K}(x,x')\| \xrightarrow{P} 0$ as width $\to \infty$.   
-
-\subtitle{Minimum-Norm Solution}
-
-For squared loss $\ell(\hat{y},y) = (\hat{y}-y)^2$, as $t \to \infty$:
-$F_{\theta_\infty}(x) = F_{\theta_0}(x) + \sum_{i=1}^m \sum_{j=1}^m \tilde{K}^{(L)}(x,x_i)\bar{K}_{i,j}^{-1}(y_j - F_{\theta_0}(x_j))$
-where $\bar{K}_{i,j} := \tilde{K}^{(L)}(x_i,x_j)$ (limiting NTK evaluated on dataset), First term is initial network output
-and Second term is correction towards minimum-norm interpolator in RKHS.
-
-\textbf{Key insight:} Solution converges to minimum-norm interpolator in NTK RKHS:
-$\arg\min_{f \in \mathcal{H}, f(x_i)=y_i} \|f\|_{\mathcal{H}}$.
-
-\subtitle{Generalization in Overparametrized Regime}
-
-\textbf{Linear Regression Setting:}
-Model: $Y = X^\top\beta + \epsilon$, $\epsilon \sim \mathcal{N}(0,\sigma^2)$, where $X=(X_1,...,X_p) \in \R^p$ with covariance $\Sigma$. $\rightarrow \hat{\beta} = (A^\top A)^\dagger A^\top Y$.
-
-\textbf{Bias-Variance Decomposition} (conditioned on $A$):
-$$\mathbb{E}[(\hat{f}_D(X) - f^*(X))^2|A] = \underbrace{\beta^\top\Pi\Sigma\Pi\beta}_{B_A=\text{bias}^2} + \underbrace{\frac{\sigma^2}{m}\text{Tr}(\hat{\Sigma}^\dagger\Sigma)}_{V_A=\text{variance}}$$
-where $\hat{\Sigma} = \frac{1}{m}A^\top A$, $\Pi = I_p - \hat{\Sigma}^\dagger\hat{\Sigma}$
-
-\textbf{Theorem (Asymptotic Variance):}
-For $p,m\to\infty$ with $p/m\to\gamma$:
-$V_A \to \sigma^2\frac{1-\max{1-\gamma,0}}{|1-\gamma|}$. \textit{[Hastie et al., 2022]}
-
-\textbf{Double Descent Phenomenon:}: $\gamma$ quantifies model complexity ($\gamma \gg 1 \Rightarrow p \gg m \Rightarrow $ Complex model). Variance increase for $\gamma \in (0,1)$ (classical bias-variance trade-off), but decreases for $\gamma > 1$ (overparametrized).
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\linewidth]{figures/double_descent_curve.jpg}
-\end{figure}
-
-$\Rightarrow$ Variance decreases as soon as model complexity passes the interpolation threshold. The test error can decrease even after the train error has reached zero.
 
 \section{Classification and Regression Trees}
 
