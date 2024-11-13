@@ -124,7 +124,7 @@
 \DeclareMathOperator{\Var}{Var}
 
 % Use small subtitles
-\newcommand{\subtitle}[1]{\begin{normalsize}\vspace{0.25cm}\textbf{#1} \end{normalsize}}
+\newcommand{\subtitle}[1]{\vspace{0.25cm}\begin{normalsize}\textbf{\textcolor{gray!150}{\uppercase{#1}}}\end{normalsize}}
 
 
 \begin{document}
@@ -191,7 +191,7 @@ Define the average model \(\hat{f}_m^{\text{avg}}(x) := \E[\hat{f}_m(x)]\).
 
 
 \subtitle{Regression Function:}
-\(\bar{f}(x)\) minimizes \(w \mapsto \int_{\mathcal{Y}} \ell(w, y) \rho_{Y|X}(dy | x)\) and is called the \textit{regression function}. \(\E[\ell(\bar{f}(X), Y)]\) is the \textit{irreducible error}.
+\(\bar{f}(x)\) minimizes \(w \mapsto \\ \int_{\mathcal{Y}} \ell(w, y) \rho_{Y|X}(dy | x)\) and is called the \textit{regression function}. \\ \(\E[\ell(\bar{f}(X), Y)]\) is the \textit{irreducible error}.
 
 \textbf{\textit{Square Loss}} \(\bar{f}(X) = \E[Y | X]\), \(\E[\ell(\bar{f}(X), Y)] = \Var(Y) - \Var(\E[Y | X])\) 
 
@@ -851,77 +851,72 @@ c^{\langle t \rangle} = \Gamma_f \odot c^{\langle t-1 \rangle} + \Gamma_i \odot 
 h^{\langle t \rangle} = \Gamma_o \odot \tanh(c^{\langle t \rangle}) & \text{(output)}
 \end{cases}$$
 
-
-
 \section{Neural Tangent Kernel (NTK)}
 
-Goal: Study the dynamics of a NN $F_\theta : \R^{N_0} \to \R$ during GD.
+\textbf{Generalization Puzzle:} Overparametrized NNs generalize well despite classical bias-variance trade-off.
 
-\begin{subbox}{Definition of NTK}
-For a neural network $ F_{\theta} : \mathbb{R}^{N_0} \rightarrow \mathbb{R} $, the \textbf{Neural Tangent Kernel (NTK)} $ K(x, x'; \theta) $ is:
-$$
-K(x, x'; \theta) = D_{\theta} F_{\theta}(x) \cdot D_{\theta} F_{\theta}(x')^T
-$$
-$\Rightarrow$ \textit{Measures similarity} of gradients of $ F_{\theta} $ at points $ x, x' $, determining how changes in parameters affect function output similarity.
+\textbf{Goal:} Study the dynamics of a NN $F_\theta : \R^{N_0} \to \R$ during GD.
+
+\begin{subbox}{Definition of Neural Tangent Kernel (NTK)}
+For a NN \( F_{\theta} : \mathbb{R}^{N_0} \rightarrow \mathbb{R} \), the \textbf{NTK} is defined as:
+\[
+K(x, x'; \theta_t) = D_{\theta_t} F_{\theta}(x) \cdot D_{\theta} F_{\theta_t}(x')^\top \in \mathbb{R}.
+\]
 \end{subbox}
 
-\begin{subbox}{Convergence at Initialization}
-In the \textbf{infinite-width limit} (width of hidden layers $ \rightarrow \infty $):
-1. $ K(\cdot, \cdot; \theta) $ becomes deterministic and \textit{remains constant during training}.
-2. $ F_{\theta}(x) $ approximates a \textit{Gaussian Process} (GP) with covariance kernel depending on initialization and activation function (Jacot et al., 2018).
-\end{subbox}
+\begin{myitemize}
+    \item Loss: $\mathcal{L}(\theta_t, D) = \frac{1}{m} \sum_{i=1}^m \ell(F_{\theta_t}(x_i), y_i)$
+    \item Gradient flow: $\frac{d\theta_t}{dt} = - D_\theta \mathcal{L}(\theta_t, D)^\top$
+\end{myitemize}
 
-\textbf{Consequence}: If $ K(\cdot, \cdot; \theta) $ is constant, gradient flow dynamics imply convergence of the loss to a global minimum.
-
----
-
-\section{Generalization in Overparameterized Networks}
-
-\textbf{The Generalization Puzzle}: Overparameterized networks (high parameter count relative to data) generalize well despite fitting data perfectly (even on noisy or random labels), defying traditional bias-variance logic:
-1. Large NNs achieve near-zero \textit{training error} yet retain strong generalization.
-2. Increased model size often reduces \textit{test error}, contrary to overfitting expectations.
-
-\begin{subbox}{Explanations}
-    1. \textbf{Implicit regularization}: SGD favors "simple" solutions with low effective complexity.
-    2. \textbf{Minimum-norm interpolation}: Solution minimizes norm in RKHS induced by NTK, improving generalization (Neyshabur et al., 2017).
-    3. \textbf{Lazy training}: In very wide NNs, parameter updates are small, and training behaves linearly.
-\end{subbox}
-
----
-
-\section{Gaussian Processes (GPs) and Neural Networks}
-
-\begin{subbox}{Gaussian Process (GP) Definition}
-A family of random variables $\{f(x)\}_{x \in X}$ is a \textbf{Gaussian Process} if any finite subset $(f(x_1), \dots, f(x_m))$ is multivariate Gaussian, characterized by:
-1. \textbf{Mean function} $ \mu(x) = \mathbb{E}[f(x)] $
-2. \textbf{Covariance kernel} $ C(x, x') = \text{Cov}(f(x), f(x')) $
-\end{subbox}
-
-\begin{subbox}{GP Interpretation of NNs}
-As width $ \rightarrow \infty $, shallow NNs approximate GPs with:
-$$
-\text{Cov}(F_{\theta}(x), F_{\theta}(x')) = C(x, x') = \mathbb{E}\left[ \rho(f(x)) \rho(f(x')) \right] + \beta^2
-$$
-where $ \rho $ is the activation function.
-\end{subbox}
-
----
-
-\section{Double Descent Phenomenon}
-
-\textbf{Double Descent}: Test error decreases even after reaching zero training error, often seen in large models. Characterized by:
-- \textbf{Classical regime}: $ m/p \ll 1 $: Overfitting increases test error.
-- \textbf{Overparameterized regime}: $ m/p \approx 1 $: Decreased test error despite complex model.
-
-\begin{subbox}{Marchenko-Pastur Law (Random Matrix Theory)}
-For large $ m, p $ with $ p/m \rightarrow \gamma $, the \textbf{spectral distribution} of a random matrix follows the Marchenko-Pastur law:
-$$
-\mu_{\text{MP}}(ds) = \frac{\sqrt{(\gamma_+ - s)(s - \gamma_-)}}{2\pi \sigma^2 \gamma s} 1_{[\gamma_-, \gamma_+]}(s) ds
-$$
-where $ \gamma\_{\pm} = \sigma^2(1 \pm \sqrt{\gamma})^2 $.
-\end{subbox}
+Using chain rule:
+$\frac{d}{dt} \mathcal{L}(\theta_t, D) = - \frac{1}{m^2} \sum_{i,j=1}^m D_{\hat{y}} \ell(F_{\theta_t}(x_i), y_i) \cdot K(x_i, x_j; \theta_t) \cdot D_{\hat{y}} \ell(F_{\theta_t}(x_j), y_j)^\top 
+= - \left\| D_{\hat{y}} \ell(F_{\theta_t}(\cdot), y) \right\|_{K(\cdot, \cdot, \theta_t), D}^2$
 
 
+\subtitle{Convergence Results} [Jacot et. al, 2018]
+
+\textbf{Theorem (NTK at Initialization):} For shallow NN $(N_0,N_1,1)$ with $\theta_0 \sim \mathcal{N}(0,I)$, as $N_1 \to \infty$:
+$F_{\theta_0} \to \text{GP}(0,C)$ where
+$C(x,x') = \mathbb{E}_{f \sim \text{GP}(0,\Sigma)}[\rho(f(x))\rho(f(x'))] + \beta^2$
+with $\Sigma(x,x') = \frac{x^\top x'}{N_0} + \beta^2$
+
+\textbf{Theorem (NTK During Training):} For any $T>0$ with bounded $\int_0^T \frac{1}{m}\sum_i \|D_{\hat{y}}\ell(F_{\theta_t}(x_i),y_i)\|_2^2dt$:
+$\sup_{t\in[0,T]}\|K(x,x';\theta_t) - \tilde{K}(x,x')\| \xrightarrow{P} 0$ as width $\to \infty$.   
+
+\subtitle{Minimum-Norm Solution}
+
+For squared loss $\ell(\hat{y},y) = (\hat{y}-y)^2$, as $t \to \infty$:
+$F_{\theta_\infty}(x) = F_{\theta_0}(x) + \sum_{i=1}^m \sum_{j=1}^m \tilde{K}^{(L)}(x,x_i)\bar{K}_{i,j}^{-1}(y_j - F_{\theta_0}(x_j))$
+where $\bar{K}_{i,j} := \tilde{K}^{(L)}(x_i,x_j)$ (limiting NTK evaluated on dataset), First term is initial network output
+and Second term is correction towards minimum-norm interpolator in RKHS.
+
+\textbf{Key insight:} Solution converges to minimum-norm interpolator in NTK RKHS:
+$\arg\min_{f \in \mathcal{H}, f(x_i)=y_i} \|f\|_{\mathcal{H}}$.
+
+\subtitle{Generalization in Overparametrized Regime}
+
+\textbf{Linear Regression Setting:}
+Model: $Y = X^\top\beta + \epsilon$, $\epsilon \sim \mathcal{N}(0,\sigma^2)$, where $X=(X_1,...,X_p) \in \R^p$ with covariance $\Sigma$. $\rightarrow \hat{\beta} = (A^\top A)^\dagger A^\top Y$.
+
+\textbf{Bias-Variance Decomposition} (conditioned on $A$):
+$$\mathbb{E}[(\hat{f}_D(X) - f^*(X))^2|A] = \underbrace{\beta^\top\Pi\Sigma\Pi\beta}_{B_A=\text{bias}^2} + \underbrace{\frac{\sigma^2}{m}\text{Tr}(\hat{\Sigma}^\dagger\Sigma)}_{V_A=\text{variance}}$$
+where $\hat{\Sigma} = \frac{1}{m}A^\top A$, $\Pi = I_p - \hat{\Sigma}^\dagger\hat{\Sigma}$
+
+\textbf{Theorem (Asymptotic Variance):}
+For $p,m\to\infty$ with $p/m\to\gamma$:
+$V_A \to \sigma^2\frac{1-\max{1-\gamma,0}}{|1-\gamma|}$. \textit{[Hastie et al., 2022]}
+
+\textbf{Double Descent Phenomenon:}: $\gamma$ quantifies model complexity ($\gamma \gg 1 \Rightarrow p \gg m \Rightarrow $ Complex model). Variance increase for $\gamma \in (0,1)$ (classical bias-variance trade-off), but decreases for $\gamma > 1$ (overparametrized).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/double_descent_curve.jpg}
+\end{figure}
+
+$\Rightarrow$ Variance decreases as soon as model complexity passes the interpolation threshold. The test error can decrease even after the train error has reached zero.
+
+\section{Classification and Regression Trees}
 
 \end{small}
 \end{document}
