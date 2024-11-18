@@ -92,6 +92,9 @@
 % To include sketches & PDFs
 \usepackage{graphicx}
 
+% For indicator function
+\usepackage{dsfont}
+
 % For hyperlinks
 \usepackage{hyperref}
 \hypersetup{
@@ -919,7 +922,87 @@ h^{\langle t \rangle} = \Gamma_o \odot \tanh(c^{\langle t \rangle}) & \text{(out
 \end{cases}$$
 
 
-\section{Classification and Regression Trees}
+\section{Classification \& Regression Trees}
+
+\textbf{Key Idea:} Transform input x into output y via sequence of simple binary decisions. \ \ \textbf{Advantages:}
+
+\begin{itemize}
+    \item Easy to interpret (medicine, insurance)
+    \item Powerful with ensemble methods
+    \item Can approximate any continuous function
+\end{itemize}
+
+\begin{subbox}{Binary Tree Definition}
+    Triplet $(\mathcal{T}, \mathcal{P}, \mathcal{V})$ where:
+    
+\begin{myitemize}
+    \item $\mathcal{T} \subseteq \bigcup_{l \in \mathbb{N}_0} \{0, 1\}^l$: nodes ($t^{\text{flip}}, t^{\text{cut}} \in \mathcal{T}$ if $t \in \mathcal{T} \setminus \{()\}$)
+    \item $\mathcal{P} = \{P_t \subseteq \mathcal{X}\}$: partitions ($P_t \cup P_{t^{\text{flip}}} = P_{t^{\text{cut}}}$)
+    \item $\mathcal{V} = \{y_t \in \mathcal{Y}\}$: values
+\end{myitemize}
+Tree function: $f(x) = \sum_{t \in \mathcal{T}} y_t \mathds{1}_{P_t}(x)$
+\end{subbox} 
+
+\begin{algorithm}[ht!]
+\footnotesize
+\caption{Basic structure of tree growing algorithm}
+\begin{algorithmic}[1]
+\State Initialize $\mathcal{T} = \{()\}$ and $P_{()} = \mathcal{X}$.
+\While{Stopping criterion (*) is not reached}
+    \State Choose a node $t \in \mathcal{T}$ ($t \in \{0, 1\}^l$), a variable $i \in \{1, \ldots, d\}$, and a set $C_i \subseteq \mathcal{X}_i$ according to criterion (**).
+    \State Set $\mathcal{T} \leftarrow \mathcal{T} \cup \{t0, t1\}$, where $t0 = (t_1, t_2, \ldots, t_l, 0)$ and $t1 = (t_1, t_2, \ldots, t_l, 1)$.
+    \State Set $P_{t0} = P_t \cap \{x \in \mathcal{X} : x_i \in C_i\}$, $P_{t1} = P_t \cap \{x \in \mathcal{X} : x_i \not\in C_i\}$.
+\EndWhile
+\State Compute the values $\mathcal{V} = \{y_t : t \in \mathcal{T}\}$; hereby, for all $t \in \mathcal{T}$, $y_t$ is calculated solely using the training data $\{y^i : i \in \{1, \ldots, m\}, x^i \in P_t\}$ according to criterion (***).
+\State \Return $(\mathcal{T}, \mathcal{P}, \mathcal{V})$.
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\subtitle{(***) How to assign values to leaves?}
+
+\textbf{Node Statistics:} $p(t) = \frac{|\{i: x^i \in P_t\}|}{m}$, $p(y|t) = \frac{|\{i: x^i \in P_t, y^i = y\}|}{|\{i: x^i \in P_t\}|}$ Here, $p(t)$ is the estimated probability of an input $x$ belonging to the set $P_t$, and $p(y | t)$ the likelihood of $y$ being the output given that an input $x$ belongs to the set $P_t$. 
+
+\textbf{Regression ($\mathcal{Y} \in \R$):} $y_t = \frac{1}{|\{i: x^i \in P_t\}|}\sum_{i: x^i \in P_t} y^i$ (emp. mean)
+
+\textbf{Classification ($\mathcal{Y} = \{1,...,K \}$):} $y_t = \arg\max_{c \in \mathcal{Y}} |\{i: x^i \in P_t, y^i = c\}|$ (majority vote)
+
+\textbf{General:} $y_t \in \arg\min_{y \in \mathcal{Y}} \sum_{i=1}^m L(y,y^i) \mathds{1}_{x^i \in P_t}$ (empirical mean for $L(y, y')=(y-y')^2$, majority vote for $L(y, y')=\mathds{1}_{y \neq y'}$.
+
+
+\subtitle{(**) How to grow a tree/split nodes?}
+
+\textbf{Tree Impurity:} For tree structure $(\mathcal{T}, \mathcal{P})$: 
+$I(t) \in [0,\infty)$ is impurity of node $t \in \mathcal{T}$, $\bar{I}(\mathcal{T}) = \sum_{t \in \mathcal{T}} p(t)I(t)$ is impurity of $\mathcal{T}$. \textit{Lower impurity is better}. $\Rightarrow$ The impurity determines the loss function which the overall tree function wants to minimize.
+
+\textbf{Optimal Split:} $(t,i,C_i) \in \arg\min_{(t',i',C_{i'})} \bar{I}(\mathcal{T}^{(t',i',C_{i'})})$
+
+
+\textbf{Classification:} $I(t) = \phi(p(1|t),\ldots,p(K|t)) \Rightarrow \bar{I}(T) \equiv \text{cross-entropy}$
+    $$\begin{cases}
+    \text{Gini: } \phi(p) = \frac{1}{2}\sum_{i=1}^K p_i(1-p_i) \\
+    \text{Entropy: } \phi(p) = -\sum_{i=1}^K p_i\log(p_i)
+    \end{cases}$$
+
+\textbf{Regression:} $I(t) = \text{Var}(\{y^i: x^i \in P_t\}) \Rightarrow \bar{I}(T) \equiv \text{square loss}$
+
+\subtitle{(*) Stopping criterion/regularization}
+\textbf{Problem:} Without stopping, tree splits until zero loss (overfitting). \textit{Solution:} Add penalty term $\alpha$ for complexity, i.e., Penalizes number of leaves, locally defined for each node.
+
+$I_\alpha(t) = I(t) + \frac{\alpha}{p(t)} \quad \quad \quad 
+\bar{I}_\alpha(\mathcal{T}) = \bar{I}(\mathcal{T}) + \alpha|\mathcal{T}| = \sum_{t \in \mathcal{T}}p(t)I_\alpha(t)$
+
+
+\textbf{Split Criterion:} Split node $t \in \mathcal{T}$ if it decreases $\bar{I}_\alpha$, i.e., if:
+\begin{scriptsize}
+$$
+\min_{(i, C_{i})} \bar{I}_\alpha\left(\mathcal{T}^{(t, i, C_{i})}\right) < \bar{I}_\alpha(\mathcal{T}) \Leftrightarrow 
+\min_{i,C_i}(p(t0)I(t0) + p(t1)I(t1)) < p(t)I(t) - \alpha
+$$
+\end{scriptsize}
+
+\textbf{Choice of $\alpha$:} Grow large tree (small $\alpha$), then prune (increase $\alpha$). Pruning exploits: $\alpha$ only affects \textit{number} of splits, not their \textit{structure}. Cross-validation efficient through pruning sequence.
+
 
 \end{small}
 \end{document}
