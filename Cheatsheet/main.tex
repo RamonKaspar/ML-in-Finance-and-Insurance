@@ -1003,6 +1003,71 @@ $$
 
 \textbf{Choice of $\alpha$:} Grow large tree (small $\alpha$), then prune (increase $\alpha$). Pruning exploits: $\alpha$ only affects \textit{number} of splits, not their \textit{structure}. Cross-validation efficient through pruning sequence.
 
+\section{Bagging \& Random Forests}
+
+\textbf{Key Idea:} Combine multiple predictors to reduce variance.\\
+\textbf{Regression} (Average): $\hat{f}(x) = \frac{1}{K} \sum_{k=1}^{K} \hat{f}^{(k)}(x)$ \\
+\textbf{Classification} (Maj. Voting): $\hat{f}(x) \in \arg \max_{y \in \mathcal{Y}} \sum_{k=1}^{K} 1_{\hat{f}^{(k)}(x) = y}$
+
+\textbf{Key Assumption:} Estimators $\hat{f}^{(1)},...,\hat{f}^{(k)}$ not strongly positively correlated!
+
+\subtitle{Bootstrapping} 
+
+Resampling technique which generates additional artificial training data sets.
+
+\begin{algorithm}[H]
+\scriptsize
+\caption{Bootstrap algorithm}
+\begin{algorithmic}[1]
+\State Set $K \in \mathbb{N}$
+\For{$k = 1, \dots, K$}
+    \State \textcolor{gray}{\textbf{Non-Parametric:} Draw samples $\tilde{Z}_1^{(k)},\ldots,\tilde{Z}_m^{(k)}$ i.i.d. with repl.}
+    \State \textcolor{gray}{\textbf{Parametric:} Fit distribution $\lambda(\varepsilon)$ to data, sample from it}
+    \State $\hat{\theta}^{(k)} := g(\tilde{Z}_1^{(k)}, \dots, \tilde{Z}_m^{(k)})$
+\EndFor
+\State Return $(\hat{\theta}^{(1)}, \dots, \hat{\theta}^{(K)})$ \textit{(bootstrap-distr. $\kappa^{(m, K)} = \frac{1}{K} \sum_{k=1}^K \delta_{\hat{\theta}^{(k)}}$)}
+\end{algorithmic}
+\end{algorithm}
+
+\subtitle{Bagging} (\textbf{B}ootstrapping with \textbf{Agg}regat\textbf{ing}) \\
+Aggregating is a technique to combine various models/estimators into a single (more powerful) estimator.
+
+\textbf{Subbagging:} Use heuristic $\tilde{m} = \lceil m / 2 \rceil$.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Bagging Algorithm (non-parametric)}
+\begin{algorithmic}[1]
+\For{$k = 1,\ldots,K$}
+    \State Draw bootstrap sample $\tilde{Z}_1^{(k)},\ldots,\tilde{Z}_m^{(k)}$ with replacement
+    \State Take $\hat{f}^{(k)} := \arg \min_{f \in \mathcal{F}} \frac{1}{m} \sum_{i=1}^m \ell(\tilde{Y}_i^{(k)}, \tilde{X}_i^{(k)}) + \lambda R(f)$
+\EndFor
+\State \Return Aggregated $\hat{f}^{agg}$ (Averaging, majority vote, or similar)
+\end{algorithmic}
+\end{algorithm}
+
+\subtitle{Random Forests}
+
+\textbf{Idea:} Modify Bagging for more variability in $\hat{f}^{(k)}$, i.e., Randomize tree generation.
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{Random Forest Algorithm (non-parametric)}
+\begin{algorithmic}[1]
+\For{$k = 1,\ldots,K$}
+\State Draw bootstrap sample $\tilde{Z}_1^{(k)},\ldots,\tilde{Z}_m^{(k)}$ with replacement
+\State Take $\hat{f}^{(k)}$ via randomized tree growing:
+\State \quad Sample feature subset $U \subset \{1,\ldots,d\}$
+\State \quad Choose best split among features in $U$
+\EndFor
+\State \Return Aggregated $\hat{f}^{agg}$ (Averaging, majority vote)
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Benefits:}  Internal randomness reduces overfitting, increases model diversity and generalization.
+
+
+\section{Gradient boosted trees}
 
 \end{small}
 \end{document}
