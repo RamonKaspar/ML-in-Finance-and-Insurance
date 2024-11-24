@@ -25,9 +25,9 @@ In this project, we conducted credit analytics for consumer loans using simulate
 
 ## Assignment 3: Deep hedging
 
-This project implements and compares different approaches to hedge a European call option using deep learning. We developed three strategies: a neural network ensemble (one network per time step), a single network incorporating time as a feature, and the analytical Black-Scholes Delta hedging. Using 100,000 simulated price paths with daily rebalancing over one month, we trained the networks to minimize the variance of hedging errors.
+In this project, we implemented and compared different deep learning approaches for hedging European call options in the Black-Scholes framework, building upon the work of Buehler et al. (2019). We developed two neural network architectures: a multi-network model with separate networks for each time step, and a more efficient single-network model that incorporates time as an additional feature. Using both synthetic training (1,000,000 paths) and test (100,000 paths) datasets, we trained these models to minimize hedging errors and compared their performance against the analytical Black-Scholes delta hedging strategy.
 
-Our deep learning models achieved comparable performance to the analytical solution ($\sigma \approx 0.009$), despite not having access to the true market dynamics. The single network architecture proved particularly efficient, achieving slightly better standard deviation (0.00898 vs 0.00915) with only 40% of the parameters (1,185 vs 2,910) and reduced training time (8.7 vs 15.7 minutes). The hedging strategies become increasingly similar to the analytical solution as we approach option maturity, demonstrating the models' ability to learn the underlying financial principles.
+The single-network architecture achieved comparable performance to the multi-network model while requiring less than half the parameters (1,185 vs 2,910) and 37% less training time. Both models achieved near-zero mean hedging errors (~0.00001) with standard deviations around 0.009, demonstrating their effectiveness in learning optimal hedging strategies in discrete time.
 
 ![](03_Deep-Hedging/plots/comparison_strategies_deep_vs_analytical.png)
 
