@@ -74,6 +74,10 @@
 % Algorithms
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+% Reduce space before and after algorithm
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{algorithm}{\vspace{-1em}}
+\AfterEndEnvironment{algorithm}{\vspace{-1em}}
 
 % Tables
 \usepackage{tabularx, multirow}
@@ -661,7 +665,6 @@ $$
     \item $\|N\|_{\infty} = \max_{0 \leq k \leq L} N_k$ is the \textit{width} of the network.
 \end{myitemize}
 
-\vspace{-0.3cm}
 \begin{algorithm}
 \footnotesize
 \caption{Forward propagation}
@@ -677,7 +680,6 @@ $$
 \State \Return $\ell(\hat{y}, y)$
 \end{algorithmic}
 \end{algorithm}
-\vspace{-0.5cm}
 
 \begin{subbox}{Mini-batch Stochastic Gradient Descent (SGD)}
     \vspace{-0.3cm}
@@ -1065,9 +1067,77 @@ Aggregating is a technique to combine various models/estimators into a single (m
 \end{algorithm}
 
 \textbf{Benefits:}  Internal randomness reduces overfitting, increases model diversity and generalization.
+\newpage
 
 
 \section{Gradient boosted trees}
+
+\textbf{Key Problem:} Given binary classification data $D = \{(x_i, y_i) \in \mathcal{X} \times \{-1,+1\}\}_{i=1}^m$ and weak learners (slightly better than random), how to build a strong classifier?
+
+\textbf{Main Idea:} Sequential training of weak learners on reweighted data, focusing on previously misclassified points. Then aggregate them into a strong classifier using error-weighted outputs.
+
+\subtitle{AdaBoost Algorithm}
+
+\begin{algorithm}[H]
+\footnotesize
+\caption{AdaBoost}
+\begin{algorithmic}[1]
+\State Initialize \textit{data weights} $w_i^{(1)} = 1$ for $i=1,\ldots,m$
+\For{$k = 1,\ldots,K$}
+    \State Fit $C_k = \arg\min_C \sum_{i=1}^m w_i^{(k)}\mathds{1}_{\{C(x_i) \neq y_i\}}$
+    \State Compute weighted error rate $\text{err}_k := \frac{\sum_{i=1}^m w_i^{(k)}\mathbb{1}\{C_k(x_i) \neq y_i\}}{\sum_{i=1}^m w_i^{(k)}}$
+    \State Compute classifier's weight $\alpha_k := \log(\frac{1-\text{err}_k}{\text{err}_k})$
+    \State Update data weights $w_i^{(k+1)} := w_i^{(k)}\exp(\alpha_k\mathds{1}_{\{C_k(x_i) \neq y_i\}})$
+\EndFor
+\State \Return $C(x) = \text{sign}(\sum_{k=1}^K \alpha_k C_k(x))$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Properties:} Always assume $\text{err}_k < \frac{1}{2}$ (else flip predictions). Weight updates increase misclassified points:
+\begin{scriptsize}
+$$w_i^{(k+1)} = \begin{cases}
+w_i^{(k)} & \text{if } C_k(x_i) = y_i\\
+w_i^{(k)}(\frac{1-\text{err}_k}{\text{err}_k}) & \text{if } C_k(x_i) \neq y_i
+\end{cases}$$
+\end{scriptsize}
+$\Rightarrow$ Next weak classifier focuses more on misclassified samples.
+
+\subtitle{Stage-wise Adaptive Modeling}
+\textbf{Additive Expansion:} Build model sequentially: $f(x) = \sum_{k=1}^K \beta_k g_{\theta_k}(x)$
+where $g_{\theta_k}$ are weak learners with parameters $\theta_k$
+
+\textbf{AdaBoost as Special Case:}
+Uses exponential loss: $\ell(f(x),y) = \exp(-yf(x))$. Optimal prediction: $f^*(x) = \frac{1}{2}\log(\frac{P(Y=1|X)}{P(Y=-1|X)})$. Weak learners: $g_{\theta_k}(x) = C_k(x)$ with weights $\beta_k = \alpha_k$.
+
+\subtitle{Gradient Boosted Trees}
+
+\textbf{Idea:} Stage-wise adapt. modelling using trees as weak learners. \\
+\textbf{Model:}$f_K(x) = \sum_{k=1}^K g_k(x)$ where $g_k=(T_k, P_k, V_k)$ small trees
+
+\begin{footnotesize}
+\begin{algorithm}[H]
+\footnotesize
+\caption{Gradient Tree Boosting Algorithm}
+\begin{algorithmic}[1]
+\State Initialize weights $f_0(x) = 0$.
+\For{$k = 1, \ldots, K$}
+    \State Compute the \textit{pseudo-residuals}: 
+    \(
+    r_{k,i} = - \left[ \frac{\partial \ell(\hat{y}, y_i)}{\partial \hat{y}} \right]_{\hat{y} = f_{k-1}(x_i)}
+    \) 
+    \State Fit a square loss regression tree $g_k = (T_k, P_k, V_k)$ to $(r_{k,i})_{i=1}^m$.
+    \State Set $f_k(x) = f_{k-1}(x) + g_k(x)$.
+\EndFor
+\State \textbf{Return} $f_K$.
+\end{algorithmic}
+\end{algorithm}
+\end{footnotesize}
+
+
+\textbf{Pseudo-residual for Square loss:} $r_{k,i} = y_i - f_{k-1}(x_i)$.
+
+\textbf{Regularization:} Restrict Max. number of leaves $J$ (typically 4-8), Learning rate $\eta$ in update $f_k = f_{k-1} + \eta g_k$, Subsampling fraction $\alpha$ of data.
+
 
 \end{small}
 \end{document}
