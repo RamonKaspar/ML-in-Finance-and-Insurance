@@ -1139,5 +1139,67 @@ Uses exponential loss: $\ell(f(x),y) = \exp(-yf(x))$. Optimal prediction: $f^*(x
 \textbf{Regularization:} Restrict Max. number of leaves $J$ (typically 4-8), Learning rate $\eta$ in update $f_k = f_{k-1} + \eta g_k$, Subsampling fraction $\alpha$ of data.
 
 
+\section{Dim. Reduction \& Autoencoders}
+
+\textbf{Goal:} Represent high-dimensional data in low-dimensional space (\textit{latent space}) by preserving as much information as possible.
+
+\subtitle{Principal Component Analysis (PCA)}
+
+\textbf{Main idea:} Project data onto low-dimensional subspace while preserving max. amount of variance.
+
+Let $A$ be the standardized data (centered and unit variance)
+
+\textbf{Optimization Problem:} Find orthonormal basis $\mathbf{v}_1, \dots, \mathbf{v}_d$ that maximize variance:
+$
+\mathbf{v}_1 = {\arg\max}_{\|\mathbf{w}\|_2=1} \|A\mathbf{w}\|_2^2
+$
+
+\textbf{Solution:} Eigenvectors of $A^T A$ (covariance matrix) corresponding to top eigenvalues $\sigma_1^2 \geq \sigma_2^2 \geq \dots$.
+
+\textbf{Dimensionality Reduction:} Represent data using $k$ top principal components, i.e., $\mathbf{x}_i \mapsto (\mathbf{x}_i^T \mathbf{v}_1, \dots, \mathbf{x}_i^T \mathbf{v}_k).
+$
+
+\textbf{SVD Solution:} $A = U\Sigma V^T = \sum_{i=1}^r \sigma_i \mathbf{u}_i \mathbf{v}_i^T$. Where $\mathbf{v}_i$: principal components (eigenvectors of $A^TA$), $\sigma_i$: singular values. \\
+$\Rightarrow$ Low-dim representation: $A_k = \sum_{i=1}^k \sigma_i \mathbf{u}_i \mathbf{v}_i^T = U_k\Sigma_kV_k^T.$
+
+\textbf{Explained Variance:} $A_k$ preserves
+$
+\frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^d \sigma_i^2}
+$
+of total variance.
+
+\subtitle{Kernel PCA}
+
+\textbf{Key Idea:} Extend PCA to non-linear transformations. \\ For kernel $k(x,x')=\langle \Phi(x), \Phi(x') \rangle_H$:
+(1) Compute $K_{ij} = k(x_i,x_j)$, (2) Center: $\tilde{K} = K - U_mK - KU_m + U_mKU_m$, (3) Solve $\tilde{K}\alpha = \lambda\alpha$, (4) Project: $\langle \mathbf{v}_k, \Phi(x) \rangle = \sum_{i=1}^m \alpha_i^{(k)} k(x_i,x)$.
+
+\subtitle{Auto-encoders}
+
+\textbf{Key Idea:} Learn latent representation automatically using NNs.
+\begin{wrapfigure}{r}{0.45\columnwidth}
+    \centering
+    \vspace{-15pt}
+    \includegraphics[width=0.45\columnwidth]{figures/Autoencoder.png}
+    \vspace{-40pt}
+\end{wrapfigure}
+\begin{itemize}
+    \item \textcolor{green}{Encoder} $F_\theta : \mathbb{R}^{N_0} \to \mathbb{R}^K$
+    \item \textcolor{red}{Decoder} $G_{\tilde{\theta}} : \mathbb{R}^K \to \mathbb{R}^{N_0}$
+    \item \textbf{Goal:} Minimize \textit{dissimiliarity} function $\ell: \mathbb{R}^{N_0} \times \mathbb{R}^{N_0} \mapsto \R_+$: 
+\end{itemize}
+$$
+\arg \min_{(\theta, \tilde{\theta})} \frac{1}{m} \sum_{i=1}^m \ell(G_{\tilde{\theta}}(F_\theta(x_i)), x_i)
+$$
+
+\begin{itemize}
+    \item \textbf{Sparse Auto-encoders (SAEs):} Penalty on latent activations. Encourage sparsity: $\mathcal{R}(F_{\theta}(x)) = \lambda |F_{\theta}(x)|_1$.
+    \item \textbf{Denoising Auto-encoders (DAEs):} Train on corrupted inputs $\tilde{x} \sim C(\cdot | x)$. Minimize $\ell(x, G_{\hat{\theta}}(F_{\theta}(\tilde{x})))$. 
+    \item \textbf{Contractive Auto-encoders (CAEs):} Penalty on input gradient: $\lambda |\nabla_x F_{\theta}(x)|_F^2$. Encourage robust latent representations (i.e., representations that locally do not change much).
+\end{itemize}
+
+\textit{\textbf{Example: Categorical Feature Embedding}}
+
+Compress high-dimensional one-hot encoded categorical features (common for insurance datasets) using autoencoders into low-dimensional embeddings; then use these latent representations in the model.
+
 \end{small}
 \end{document}
