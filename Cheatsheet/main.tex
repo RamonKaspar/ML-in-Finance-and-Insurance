@@ -1201,5 +1201,67 @@ $$
 
 Compress high-dimensional one-hot encoded categorical features (common for insurance datasets) using autoencoders into low-dimensional embeddings; then use these latent representations in the model.
 
+
+\section{GNNs \& Transformers}
+
+\textbf{Key Idea:} Combine flexibility of NNs with relational structure learning. GNNs leverage \textit{inductive biases} to learn from graph-structured data, capturing relationships between entities.
+
+\subtitle{Graph Neural Networks}
+
+\textbf{Graph Data:} $G=(V,E)$ with Node data: $x_v \in \mathbb{R}^{d_V}$ for $v \in V$; Edge data: $x_e \in \mathbb{R}^{d_E}$ for $e \in E$; and Global data: $u \in \mathbb{R}^{d_U}$.
+
+\textbf{Aggregation functions:} used to aggregate information across all edges
+connected to a given node (with varying \#edges).
+
+\begin{subbox}{Graph Net Layer}
+    Transforms graphical input data into graphical output data of the same shape.
+\begin{enumerate}
+    \item \textbf{Edge transform:} $x_e' = \phi^E(x_e, x_v, x_w, u)$ for $e=(v,w)$. \\
+    Edge $\rightarrow$ node agg.: $a_w = \rho^{E\to V}(\{x_e': e=(v,w)\})$. \\
+    Edge $\rightarrow$ global agg.: $a_E = \rho^{E\to U}(\{x_e': e \in E\})$
+    \item \textbf{Node transform:} $x_v' = \phi^V(a_v, x_v, u)$ \\
+    Node $\rightarrow$ global agg.: $a_V = \rho^{V\to U}(\{x_v': v \in V\})$
+    \item \textbf{Global transform:} $u' = \phi^U(a_E, a_V, u)$
+\end{enumerate}
+\end{subbox}
+
+$\Rightarrow$ Reason for efficiency of GNNs is that function $\phi^V$ (respectively its parameters) is \textit{shared among all nodes}, and similarly $\phi^E$ is \textit{shared among all edges}.
+
+\subtitle{Self-Attention Layer}
+
+Feedforward NNs $f_K, f_Q, f_V : \mathbb{R}^d \to \mathbb{R}^d$ (\emph{\textbf{K}eys, \textbf{Q}ueries, \textbf{V}alues})
+\begin{scriptsize}
+\begin{itemize}
+    \item \textbf{Edge transformation:}
+    \(
+    \phi^E(x_{(v,w)}, x_v, x_w) = \left( A_{(v,w)}, \nu_{(v,w)} \right) := \\ \left( \frac{\langle f_Q(x_w), f_K(x_v) \rangle}{\sqrt{d}}, f_V(x_v) \right) \in \mathbb{R}^{d+1}.
+    \)
+    \item \textbf{Softmax aggr. ($\rho^{E \mapsto V}$):}
+    \(
+    a_w = \sum_{e \in E_w} \frac{\exp(A_e)}{\sum_{e' \in E_w} \exp(A_{e'})} \nu_e \in \mathbb{R}^d.
+    \)
+    \item \textbf{Node transformation:}
+    \(
+    x'_v = \phi^V(a_v, x_v) = f_O(a_v) \in \mathbb{R}^d.
+    \)
+\end{itemize}
+\end{scriptsize}
+
+
+\subtitle{Transformers}
+
+\textbf{Key Idea:} Stack self-attention layers for seq. data (esp. text).
+
+\begin{itemize}
+    \item Input tokens $w_1,...,w_n$ → embeddings in $\mathbb{R}^d$
+    \item Learning objective: predict probability distribution over next token $w_{n+1}$ given $w_1,...,w_n$ (conditional prob. forecasting).
+    \item Graph: Full $(V\times V)$ or Causal $\{(i,j): i<j\}$ (i.e., masked attention, so  token at position $j$ can only "pay attention to" tokens at positions $i< $j).
+    \item Layer: Multi-head attention + Norm + Residuals
+    \item Loss: $\ell(p,y)=\sum_{i=1}^K y_i\log(p_i)$
+\end{itemize}
+
+\textbf{Training:}
+\textbf{(1) Pretrain:} Large-scale unsupervised (e.g., next token); \textbf{(2) Finetune:} Task-specific via full / frozen / PEFT / LoRA $(W \to W + AB, A\in\mathbb{R}^{d\times r}, B\in\mathbb{R}^{r\times k})$ / Soft-prompting.
+
 \end{small}
 \end{document}
