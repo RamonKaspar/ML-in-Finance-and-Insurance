@@ -36,3 +36,11 @@ The single-network architecture achieved comparable performance to the multi-net
 </p>
 
 ## Assignment 4: Insurance claim prediction
+
+In this project, we developed and compared different models for predicting insurance claim frequencies using the French motor third-party liability dataset (678,007 policies). We implemented six different approaches: a Poisson Generalized Linear Model (GLM), two Poisson Neural Networks (a simple architecture and a regularized deeper version), and three tree-based methods (CART, Random Forest, and Gradient Boosting). After careful feature engineering, including logarithmic transformations and categorical encoding, we trained these models to minimize the exposure-weighted Poisson deviance loss. The Histogram Gradient Boosting Regressor emerged as the best performer, achieving a test loss of 0.4521, outperforming both the traditional GLM (0.4627) and the neural network approaches (0.4565), while also being computationally more efficient.
+
+![](04_Insurance-Claim-Prediction/plots/model_comparison.png)
+
+<p align="center" style="color: gray; font-style: italic;"> 
+    <em>Model Comparison – Gradient-boosted trees outperform other methods in terms of exposure-weighted Poisson deviance loss and run-time.</em> 
+</p>
