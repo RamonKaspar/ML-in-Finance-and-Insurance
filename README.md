@@ -1,4 +1,4 @@
-# ML-in-Finance-and-Insurance
+# Machine Learning in Finance & Insurance
 
 Coding assignments of the "Machine Learning in Finance & Insurance" course at ETH Zürich (Fall 2024).
 
