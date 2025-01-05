@@ -1,6 +1,6 @@
 # Machine Learning in Finance & Insurance
 
-Coding assignments of the "Machine Learning in Finance & Insurance" course at ETH Zürich (Fall 2024).
+Coding assignments of the "Machine Learning in Finance & Insurance" course at ETH Zürich (Fall, 2024).
 
 ## Assignment 1: Pricing with linear regression
 
