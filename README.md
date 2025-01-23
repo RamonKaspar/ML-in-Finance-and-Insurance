@@ -2,7 +2,7 @@
 
 Coding assignments of the "Machine Learning in Finance & Insurance" course at ETH Zürich (Fall, 2024).
 
-Furthermore, the cheatsheet I used for the final exam can be found [here](Cheatsheet\Cheatsheet_ML_in_Finance_and_Insurance.pdf).
+Furthermore, the cheatsheet I used for the final exam can be found [here](https://github.com/RamonKaspar/ML-in-Finance-and-Insurance/blob/main/Cheatsheet/Cheatsheet_ML_in_Finance_and_Insurance.pdf).
 
 ## Assignment 1: Pricing with linear regression
 
